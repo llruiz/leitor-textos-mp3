@@ -1,1 +1,701 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#667eea">
+    <title>Leitor de Textos - MP3</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        h1 { 
+            text-align: center; 
+            color: white; 
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: rgba(255,255,255,0.9);
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        .container {
+            background: #fff;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .info-box strong { color: #0d47a1; }
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: 600;
+            color: #555;
+        }
+        textarea {
+            width: 100%;
+            height: 300px;
+            margin-top: 10px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            resize: vertical;
+            font-size: 16px;
+            line-height: 1.6;
+            font-family: inherit;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        select, input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            margin-top: 8px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        button {
+            flex: 1;
+            min-width: 140px;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        #generateBtn { 
+            background: linear-gradient(135deg, #27ae60, #2ecc71); 
+            color: white; 
+        }
+        #generateBtn:hover:not(:disabled) { 
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.4);
+        }
+        #downloadBtn { 
+            background: linear-gradient(135deg, #3498db, #2980b9); 
+            color: white; 
+            display: none;
+        }
+        #downloadBtn:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
+        }
+        .status {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            text-align: center;
+            display: none;
+        }
+        .status.active { display: block; }
+        .status.loading { background: #fff3cd; color: #856404; }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        
+        .progress-container {
+            margin-top: 15px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            height: 10px;
+            overflow: hidden;
+            display: none;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .audio-player {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: none;
+        }
+        .audio-player audio {
+            width: 100%;
+        }
+        
+        .stats {
+            margin-top: 10px;
+            font-size: 13px;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .voice-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .voice-option {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .voice-option:hover { border-color: #667eea; }
+        .voice-option.selected {
+            border-color: #667eea;
+            background: #f3f4ff;
+        }
+        .voice-option .name { font-weight: 600; color: #333; font-size: 14px; }
+        .voice-option .desc { font-size: 12px; color: #666; margin-top: 4px; }
+        
+        .chunk-info {
+            background: #fff8e1;
+            border: 1px solid #ffc107;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-size: 13px;
+            color: #f57c00;
+            display: none;
+        }
+        
+        @media (max-width: 600px) {
+            .voice-options { grid-template-columns: 1fr; }
+            .controls { flex-direction: column; }
+            button { width: 100%; }
+        }
+    </style>
+</head>
+<body>
 
+    <h1>🔊 Leitor de Textos Pro</h1>
+    <p class="subtitle">Converta textos longos para MP3 com voz natural</p>
+
+    <div class="container">
+        <div class="info-box">
+            <strong>📊 Cota disponível:</strong> 1 milhão de caracteres/mês (Google Cloud)<br>
+            <strong>📝 Seu texto:</strong> <span id="charCount">0</span> caracteres | 
+            <strong>📦 Partes:</strong> <span id="chunkCount">1</span> MP3(s)
+        </div>
+
+        <label for="fileInput">📄 Carregar arquivo .txt:</label>
+        <input type="file" id="fileInput" accept=".txt">
+
+        <label>🎙️ Escolha a voz:</label>
+        <div class="voice-options">
+            <div class="voice-option selected" onclick="selectVoice('pt-BR-Standard-A')">
+                <div class="name">🎙️ Feminina Padrão</div>
+                <div class="desc">Voz clara e natural</div>
+            </div>
+            <div class="voice-option" onclick="selectVoice('pt-BR-Standard-B')">
+                <div class="name">🎙️ Masculina Padrão</div>
+                <div class="desc">Tom grave e estável</div>
+            </div>
+            <div class="voice-option" onclick="selectVoice('pt-BR-Wavenet-A')">
+                <div class="name">✨ Feminina Neural</div>
+                <div class="desc">Qualidade premium (consome mais cota)</div>
+            </div>
+            <div class="voice-option" onclick="selectVoice('pt-BR-Wavenet-B')">
+                <div class="name">✨ Masculina Neural</div>
+                <div class="desc">Qualidade premium (consome mais cota)</div>
+            </div>
+        </div>
+
+        <div class="chunk-info" id="chunkInfo">
+            ⚠️ Texto muito longo! Será dividido em múltiplos arquivos MP3 de ~5000 caracteres cada.
+        </div>
+
+        <textarea id="textDisplay" placeholder="Cole seu texto aqui... Suporte para até 20.000+ caracteres. O texto será processado e dividido automaticamente se necessário."></textarea>
+        
+        <div class="stats">
+            <span id="statusText">Pronto para gerar</span>
+            <span id="quotaInfo">Cota: ~0 caracteres</span>
+        </div>
+
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <div class="controls">
+            <button id="generateBtn" onclick="generateAll()">
+                🎵 Gerar MP3
+            </button>
+            <button id="downloadBtn" onclick="downloadAll()" style="display:none;">
+                ⬇️ Baixar Todos
+            </button>
+        </div>
+
+        <div id="status" class="status"></div>
+
+        <div class="audio-player" id="audioPlayer">
+            <p style="margin:0 0 10px 0; font-weight:600; color:#555;">🔊 Preview do último áudio:</p>
+            <audio id="audioElement" controls></audio>
+        </div>
+        
+        <div id="downloadLinks" style="margin-top:20px;"></div>
+    </div>
+
+    <script>
+        // Configurações
+        const MAX_CHUNK_SIZE = 5000; // Máximo por requisição (limite seguro)
+        let selectedVoice = 'pt-BR-Standard-A';
+        let generatedBlobs = [];
+        let generatedFileNames = [];
+        
+        // Elementos DOM
+        const textDisplay = document.getElementById('textDisplay');
+        const fileInput = document.getElementById('fileInput');
+        const charCount = document.getElementById('charCount');
+        const chunkCount = document.getElementById('chunkCount');
+        const chunkInfo = document.getElementById('chunkInfo');
+        const statusText = document.getElementById('statusText');
+        const quotaInfo = document.getElementById('quotaInfo');
+        const generateBtn = document.getElementById('generateBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const statusDiv = document.getElementById('status');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const audioElement = document.getElementById('audioElement');
+        const downloadLinks = document.getElementById('downloadLinks');
+
+        // Atualizar estatísticas
+        function updateStats() {
+            const text = textDisplay.value;
+            const len = text.length;
+            const chunks = Math.ceil(len / MAX_CHUNK_SIZE);
+            
+            charCount.textContent = len.toLocaleString();
+            chunkCount.textContent = chunks;
+            quotaInfo.textContent = `Cota: ~${len.toLocaleString()} caracteres`;
+            
+            if (len > MAX_CHUNK_SIZE) {
+                chunkInfo.style.display = 'block';
+                chunkInfo.innerHTML = `⚠️ Texto longo! Será dividido em <strong>${chunks} partes</strong> de ~${MAX_CHUNK_SIZE} caracteres.`;
+            } else {
+                chunkInfo.style.display = 'none';
+            }
+            
+            statusText.textContent = len > 0 ? `${len.toLocaleString()} caracteres prontos` : 'Aguardando texto...';
+        }
+
+        textDisplay.addEventListener('input', updateStats);
+
+        // Ler arquivo
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                textDisplay.value = e.target.result;
+                updateStats();
+                showStatus('✅ Arquivo carregado!', 'success');
+            };
+            reader.onerror = () => {
+                showStatus('❌ Erro ao ler arquivo', 'error');
+            };
+            reader.readAsText(file);
+        });
+
+        // Selecionar voz
+        function selectVoice(voice) {
+            selectedVoice = voice;
+            document.querySelectorAll('.voice-option').forEach(opt => opt.classList.remove('selected'));
+            event.currentTarget.classList.add('selected');
+        }
+
+        // Mostrar status
+        function showStatus(msg, type) {
+            statusDiv.textContent = msg;
+            statusDiv.className = `status active ${type}`;
+        }
+
+        // Atualizar progresso
+        function updateProgress(current, total) {
+            progressContainer.style.display = 'block';
+            const percent = (current / total) * 100;
+            progressBar.style.width = `${percent}%`;
+        }
+
+        // Tratamento fonético jurídico completo
+        function phoneticTreatment(text) {
+            const replacements = {
+                // Jurídicos
+                "\\bArt\\.\\b": "Artigo",
+                "\\bArts\\.\\b": "Artigos",
+                "\\bInc\\.\\b": "Inciso",
+                "\\bInciso\\s+I\\b": "Inciso um",
+                "\\bInciso\\s+II\\b": "Inciso dois",
+                "\\bInciso\\s+III\\b": "Inciso três",
+                "\\bInciso\\s+IV\\b": "Inciso quatro",
+                "\\bInciso\\s+V\\b": "Inciso cinco",
+                "\\bPar\\.\\b": "Parágrafo",
+                "\\b§\\s*1\\.\\b": "Parágrafo primeiro",
+                "\\b§\\s*2\\.\\b": "Parágrafo segundo",
+                "\\b§\\s*3\\.\\b": "Parágrafo terceiro",
+                "§": "Parágrafo",
+                "º": "o",
+                "ª": "a",
+                "°": "o",
+                
+                // Tribunais
+                "\\bSTF\\b": "Supremo Tribunal Federal",
+                "\\bSTJ\\b": "Superior Tribunal de Justiça",
+                "\\bTRF\\b": "Tribunal Regional Federal",
+                "\\bTJ\\b": "Tribunal de Justiça",
+                "\\bTRT\\b": "Tribunal Regional do Trabalho",
+                "\\bTST\\b": "Tribunal Superior do Trabalho",
+                "\\bTSE\\b": "Tribunal Superior Eleitoral",
+                "\\bSTM\\b": "Superior Tribunal Militar",
+                "\\bCF\\b": "Constituição Federal",
+                "\\bCC\\b": "Código Civil",
+                "\\bCPC\\b": "Código de Processo Civil",
+                "\\bCTN\\b": "Código Tributário Nacional",
+                "\\bCLT\\b": "Consolidação das Leis do Trabalho",
+                "\\bCPP\\b": "Código de Processo Penal",
+                "\\bCP\\b": "Código Penal",
+                
+                // Títulos
+                "\\bDr\\.\\b": "Doutor",
+                "\\bDra\\.\\b": "Doutora",
+                "\\bSr\\.\\b": "Senhor",
+                "\\bSra\\.\\b": "Senhora",
+                "\\bSrta\\.\\b": "Senhorita",
+                "\\bExmo\\.\\b": "Excelentíssimo",
+                "\\bExma\\.\\b": "Excelentíssima",
+                "\\bV\\.\\s*Exa\\.\\b": "Vossa Excelência",
+                "\\bV\\.\\s*S\\.\\b": "Vossa Senhoria",
+                "\\bMM\\.\\b": "Meritíssimos",
+                "\\bMs\\.\\b": "Meritíssimo",
+                "\\bDes\\.\\b": "Desembargador",
+                "\\bDesa\\.\\b": "Desembargadora",
+                "\\bMin\\.\\b": "Ministro",
+                "\\bJuiz\\.\\b": "Juiz",
+                
+                // Processos
+                "\\bProc\\.\\b": "Processo",
+                "\\bProc\\.?\\s* n\\.?\\b": "Processo número",
+                "\\bn\\.\\b": "número",
+                "\\bN\\.\\b": "Número",
+                "\\bfl\\.\\b": "folha",
+                "\\bfls\\.\\b": "folhas",
+                "\\bp\\.\\b": "página",
+                "\\bpp\\.\\b": "páginas",
+                "\\bid\\.\\b": "idem",
+                "\\bop\\.\\b": "opus citatum",
+                "\\bl\\.\\b": "laudo",
+                "\\bLaudo\\.\\b": "Laudo",
+                
+                // Termos processuais
+                "\\bc/c\\b": "combinado com",
+                "\\bcc\\b": "cópia carbono",
+                "\\bvs\\.\\b": "contra",
+                "\\bV\\.\\b": "Versus",
+                "\\betc\\.\\b": "et cetera",
+                "\\bEg\\.\\b": "Exempli gratia",
+                "\\bobs\\.\\b": "observação",
+                "\\bObs\\.\\b": "Observação",
+                "\\brespv\\.\\b": "respectivamente",
+                "\\btrav\\.\\b": "travessão",
+                
+                // Numerais ordinais comuns
+                "\\b1\\.º\\b": "primeiro",
+                "\\b2\\.º\\b": "segundo",
+                "\\b3\\.º\\b": "terceiro",
+                "\\b4\\.º\\b": "quarto",
+                "\\b5\\.º\\b": "quinto",
+                "\\b1\\.ª\\b": "primeira",
+                "\\b2\\.ª\\b": "segunda",
+                "\\b3\\.ª\\b": "terceira",
+                
+                // Valores
+                "\\bR\\$\\s*": "reais ",
+                "\\bUS\\$\\s*": "dólares ",
+                "\\bU\\$\\$\\s*": "dólares ",
+                "\\b€\\s*": "euros ",
+                "\\b£\\s*": "libras ",
+                "%": " por cento",
+                
+                // Datas
+                "\\bjan\\.\\b": "janeiro",
+                "\\bfev\\.\\b": "fevereiro",
+                "\\bmar\\.\\b": "março",
+                "\\babr\\.\\b": "abril",
+                "\\bmai\\.\\b": "maio",
+                "\\bjun\\.\\b": "junho",
+                "\\bjul\\.\\b": "julho",
+                "\\bago\\.\\b": "agosto",
+                "\\bset\\.\\b": "setembro",
+                "\\bout\\.\\b": "outubro",
+                "\\bnov\\.\\b": "novembro",
+                "\\bdez\\.\\b": "dezembro",
+                
+                // Siglas comuns
+                "\\bCNPJ\\b": "C N P J",
+                "\\bCPF\\b": "C P F",
+                "\\bRG\\b": "R G",
+                "\\bPIS\\b": "P I S",
+                "\\bCEP\\b": "C E P",
+                "\\bUF\\b": "U F",
+                "\\bIBGE\\b": "I B G E",
+                "\\bREsp\\.\\b": "Recurso Especial",
+                "\\bRE\\b": "Recurso Extraordinário",
+                "\\bHC\\b": "Habeas Corpus",
+                "\\bMS\\b": "Mandado de Segurança",
+                "\\bMI\\b": "Mandado de Injunção",
+                "\\bADPF\\b": "Arguição de Descumprimento de Preceito Fundamental",
+                "\\bADI\\b": "Ação Direta de Inconstitucionalidade",
+                "\\bADC\\b": "Ação Declaratória de Constitucionalidade",
+                
+                // Abreviações pessoais
+                "\\bFil\\.\\b": "Filho",
+                "\\bNet\\.\\b": "Neto",
+                "\\bSobr\\.\\b": "Sobrinho",
+                "\\bJr\\.\\b": "Junior",
+                "\\bJunior\\.\\b": "Júnior",
+                "\\bNeto\\.\\b": "Neto",
+                "\\bFilho\\.\\b": "Filho"
+            };
+
+            let processed = text;
+            for (const [pattern, replacement] of Object.entries(replacements)) {
+                try {
+                    const regex = new RegExp(pattern, 'gi');
+                    processed = processed.replace(regex, replacement);
+                } catch (e) {
+                    console.warn('Erro no padrão:', pattern, e);
+                }
+            }
+            return processed;
+        }
+
+        // Dividir texto em chunks
+        function splitIntoChunks(text, maxSize) {
+            const chunks = [];
+            let currentChunk = '';
+            const sentences = text.match(/[^.!?]+[.!?]+[\s\n]*/g) || [text];
+            
+            for (const sentence of sentences) {
+                if ((currentChunk + sentence).length <= maxSize) {
+                    currentChunk += sentence;
+                } else {
+                    if (currentChunk) chunks.push(currentChunk.trim());
+                    currentChunk = sentence;
+                }
+            }
+            
+            if (currentChunk) chunks.push(currentChunk.trim());
+            
+            // Se algum chunk ainda for maior que maxSize (frase muito longa), dividir forçado
+            const finalChunks = [];
+            for (const chunk of chunks) {
+                if (chunk.length <= maxSize) {
+                    finalChunks.push(chunk);
+                } else {
+                    for (let i = 0; i < chunk.length; i += maxSize) {
+                        finalChunks.push(chunk.slice(i, i + maxSize));
+                    }
+                }
+            }
+            
+            return finalChunks;
+        }
+
+        // Gerar todos os MP3s
+        async function generateAll() {
+            const text = textDisplay.value.trim();
+            if (!text) {
+                showStatus('⚠️ Insira um texto primeiro!', 'error');
+                return;
+            }
+
+            // Reset
+            generatedBlobs = [];
+            generatedFileNames = [];
+            downloadLinks.innerHTML = '';
+            
+            // Processar foneticamente
+            const treatedText = phoneticTreatment(text);
+            
+            // Dividir em chunks
+            const chunks = splitIntoChunks(treatedText, MAX_CHUNK_SIZE);
+            console.log(`Dividido em ${chunks.length} partes`);
+
+            generateBtn.disabled = true;
+            generateBtn.textContent = `🎙️ Gerando 1/${chunks.length}...`;
+            showStatus(`🎙️ Iniciando geração de ${chunks.length} arquivo(s) MP3...`, 'loading');
+
+            try {
+                for (let i = 0; i < chunks.length; i++) {
+                    updateProgress(i, chunks.length);
+                    generateBtn.textContent = `🎙️ Gerando ${i + 1}/${chunks.length}...`;
+                    
+                    const chunk = chunks[i];
+                    const blob = await generateSingleMP3(chunk, i + 1, chunks.length);
+                    
+                    if (blob) {
+                        generatedBlobs.push(blob);
+                        const fileName = chunks.length === 1 
+                            ? `leitura_${Date.now()}.mp3`
+                            : `leitura_parte${i + 1}_de_${chunks.length}_${Date.now()}.mp3`;
+                        generatedFileNames.push(fileName);
+                        
+                        // Criar link individual
+                        const url = URL.createObjectURL(blob);
+                        addDownloadLink(url, fileName, i + 1, chunks.length);
+                        
+                        // Preview do último
+                        if (i === chunks.length - 1) {
+                            audioElement.src = url;
+                            audioPlayer.style.display = 'block';
+                        }
+                    }
+                    
+                    // Pequena pausa entre requisições para não sobrecarregar
+                    if (i < chunks.length - 1) {
+                        await new Promise(r => setTimeout(r, 500));
+                    }
+                }
+
+                updateProgress(chunks.length, chunks.length);
+                showStatus(`✅ ${chunks.length} arquivo(s) MP3 gerado(s) com sucesso!`, 'success');
+                
+                generateBtn.style.display = 'none';
+                downloadBtn.style.display = 'flex';
+                
+                if (chunks.length > 1) {
+                    downloadBtn.textContent = `⬇️ Baixar todos (${chunks.length} arquivos)`;
+                }
+
+            } catch (error) {
+                console.error('Erro na geração:', error);
+                showStatus('❌ Erro ao gerar áudio: ' + error.message, 'error');
+                generateBtn.disabled = false;
+                generateBtn.textContent = '🎵 Tentar Novamente';
+            }
+        }
+
+        // Gerar MP3 individual via API
+        async function generateSingleMP3(text, current, total) {
+            try {
+                const response = await fetch('/api/tts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        voice: selectedVoice
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || `Erro ${response.status}`);
+                }
+
+                const blob = await response.blob();
+                if (blob.size === 0) throw new Error('Arquivo vazio');
+                
+                return blob;
+
+            } catch (error) {
+                console.error(`Erro na parte ${current}:`, error);
+                throw error;
+            }
+        }
+
+        // Adicionar link de download individual
+        function addDownloadLink(url, fileName, current, total) {
+            const div = document.createElement('div');
+            div.style.cssText = 'margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;';
+            
+            const label = total === 1 ? 'MP3 Gerado' : `Parte ${current} de ${total}`;
+            
+            div.innerHTML = `
+                <span style="font-weight: 600; color: #555;">${label}</span>
+                <a href="${url}" download="${fileName}" style="background: #3498db; color: white; padding: 8px 16px; border-radius: 4px; text-decoration: none; font-size: 14px;">
+                    ⬇️ Baixar
+                </a>
+            `;
+            downloadLinks.appendChild(div);
+        }
+
+        // Download de todos (como ZIP ou individual)
+        async function downloadAll() {
+            if (generatedBlobs.length === 0) return;
+            
+            if (generatedBlobs.length === 1) {
+                // Download único
+                const url = URL.createObjectURL(generatedBlobs[0]);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = generatedFileNames[0];
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } else {
+                // Múltiplos: baixar sequencialmente
+                showStatus('📥 Iniciando downloads...', 'loading');
+                
+                for (let i = 0; i < generatedBlobs.length; i++) {
+                    const url = URL.createObjectURL(generatedBlobs[i]);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = generatedFileNames[i];
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    
+                    // Delay entre downloads para não bloquear o browser
+                    await new Promise(r => setTimeout(r, 800));
+                }
+                
+                showStatus('✅ Todos os downloads iniciados!', 'success');
+            }
+        }
+
+        // Inicialização
+        updateStats();
+    </script>
+</body>
+</html>
