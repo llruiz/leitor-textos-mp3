@@ -1,1 +1,21 @@
-
+{
+  "name": "leitor-textos-mp3",
+  "version": "1.0.0",
+  "description": "Conversor de textos para MP3 usando Google Cloud TTS",
+  "main": "index.html",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "tts",
+    "text-to-speech",
+    "mp3",
+    "google-cloud",
+    "vercel"
+  ],
+  "author": "Seu Nome",
+  "license": "MIT",
+  "dependencies": {
+    "@google-cloud/text-to-speech": "^5.0.0"
+  }
+}
